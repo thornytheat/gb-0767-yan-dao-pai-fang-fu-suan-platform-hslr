@@ -39,6 +39,14 @@ def snapshot(run_id, stage):
     return jsonify(archive().require(run_id)['results'][stage])
 
 
+@api.get('/runs/<run_id>/handoffs')
+def handoffs(run_id):
+    packet = archive().require(run_id)
+    parameters = packet['manifest']['parameters']
+    scope_key = f"{parameters['stack']}|{parameters['start']}"
+    return jsonify(tickets=archive().handoffs(scope_key))
+
+
 @api.get('/export/<run_id>')
 def export(run_id):
     response = jsonify(issue(archive().require(run_id)))

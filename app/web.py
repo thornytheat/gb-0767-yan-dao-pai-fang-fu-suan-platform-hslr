@@ -34,8 +34,13 @@ def show(page='home'):
         meta = {'run_id': key, 'rule': VERSION, 'source': name, 'parameters': vars(audit.window)}
     if page == 'runs':
         history = archive().history()
+    handoff_tickets = []
+    if run_id and page in {'hours', 'home'}:
+        parameters = meta['parameters']
+        handoff_tickets = archive().handoffs(f"{parameters['stack']}|{parameters['start']}")
     chart = [row for row in results['hours']['rows'] if row['mg_nm3'] is not None]
     ceiling = max((float(row['mg_nm3']) for row in chart), default=0)
     return render_template('base.html', page=page, pages=PAGES, name=name, run_id=run_id, history=history,
                            certificate=certificate, result=results, meta=meta, ceiling=ceiling, labels=LABELS,
+                           handoff_tickets=handoff_tickets,
                            issue_rows=[r for r in results['validity']['rows'] if r['state'] == 'missing' or r['late']])

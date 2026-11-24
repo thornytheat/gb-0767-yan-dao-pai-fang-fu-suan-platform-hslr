@@ -1,1 +1,12 @@
 <section class="panel"><h2>小时复算清单</h2><div class="scroll"><table><thead><tr><th>小时</th><th>有效 / 门槛</th><th>免计</th><th>缺证</th><th>迟补有效</th><th>浓度 mg/Nm³</th><th>判定</th></tr></thead><tbody>{% for h in result.hours.rows %}<tr><td>{{ h.local }}</td><td>{{ h.valid }} / {{ h.threshold }}</td><td>{{ h.exempt }}</td><td>{{ h.missing }}</td><td>{{ h.late }}</td><td>{{ h.mg_nm3 or '—' }}</td><td>{{ labels[h.status] }}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="panel"><h2>超限事件交接 <small class="rule-note">限值 {{ result.exceedance.limit_mg_nm3 }} mg/Nm³ · 连续有效高值 15 分钟确证 · 免计断开 · 缺测挂起待补</small></h2>
+{% set events = result.exceedance.events %}
+{% if events %}<div class="scroll"><table id="handoff-table"><thead><tr><th>处置单</th><th>首高值分钟</th><th>末高值分钟</th><th>高值分钟</th><th>缺测缺口</th><th>当前状态</th><th>交接说明</th></tr></thead><tbody>
+{% for e in events %}{% set s = e.ticket_status|default(e.status) %}<tr class="handoff-row {{ s }}"><td>{{ e.ticket_no|default('归档后编号') }}</td><td>{{ e.start[11:16] }}</td><td>{{ e.end[11:16] }}</td><td>{{ e.high_minutes }}</td><td title="{{ e.gaps|map(attribute='local')|join('、') }}">{{ e.gap_minutes }}</td><td><span class="tag {{ s }}">{{ labels[s] }}</span></td><td class="note-cell">{% if s == 'PENDING' %}缺口分钟未补齐，先派人排查，不得直接判超限{% elif s == 'CONFIRMED' and e.gap_minutes %}晚到补证后复算确证{% elif s == 'CONFIRMED' %}连续有效高值达到十五分钟判据{% else %}{{ s }}{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+{% if not run_id %}<p class="rule-note">预览模式不登记处置单；点击「归档复算」后生成当前处置单，两班同时补证同事件只保留一张。</p>{% endif %}
+{% else %}<p class="rule-note">本窗口无达到交接条件的连续高值事件。</p>{% endif %}
+{% if handoff_tickets %}<h2 class="subhead">当前处置单（含历史结论）</h2><div class="scroll"><table><thead><tr><th>处置单号</th><th>事件键</th><th>当前状态</th><th>建单运行</th><th>最近运行</th><th>结论轨迹</th></tr></thead><tbody>
+{% for t in handoff_tickets %}<tr><td>{{ t.ticket_no }}</td><td class="raw" title="{{ t.event_id }}">{{ t.event_id }}</td><td><span class="tag {{ t.status }}">{{ labels[t.status] }}</span></td><td><code title="{{ t.opened_run }}">{{ t.opened_run[:10] }}</code></td><td><code title="{{ t.current_run }}">{{ t.current_run[:10] }}</code></td><td class="note-cell">{% for h in t.history %}<div>{{ h.at[5:16] }} {{ labels[h.status] }}：{{ h.note }}</div>{% endfor %}</td></tr>{% endfor %}
+</tbody></table></div>{% endif %}
+</section>

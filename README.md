@@ -23,9 +23,10 @@ python -m pytest -q
 1. 选择「异常与迟补样例」，首页应测为 120，显示有效 91、工况免计 8、缺证 21。
 2. 在「分钟有效性裁决」选「仅缺证」，查看氧量超界、同版冲突和仪器校准。工况重叠分钟在两份记录间以停机优先。
 3. 在「报送差异对账」核对 08:00 复算 30.50、报送 29.75、差额 +0.75 mg/Nm³。09:00 的 44 个有效分钟低于 45 门槛。
-4. 点击「归档复算」并重跑。相同原件复用运行编号。在「监测证据签发」下载带输入摘要、原值、裁决与勾稽的 JSON。
+4. 在「小时汇总复算」底部交接超限事件：连续 15 个有效高值分钟才判超限确证；两段高值中间缺一分钟时先挂「待研判」派人排查，不直接判超限；跨整点高值接续，遇到停机免计分钟断开。归档后晚到记录补齐缺测，同一张处置单转为确证或撤销；两班同时提交同一时段补证只留一张当前处置单，已归档结论按当时证据保留。
+5. 点击「归档复算」并重跑。相同原件复用运行编号。在「监测证据签发」下载带输入摘要、原值、裁决与勾稽的 JSON。
 
-五个预览接口均为 `GET /api/samples/{dirty|clean}/{stage}`，各工序按需计算；`stage` 值见深度登记。自有数据通过 `POST /api/runs` 的 `files` 对象提交字符串 `window`、`minutes`、`modes`、`reports`，也可提交 `{"sample":"dirty"}`。`GET /api/runs/{id}/{stage}` 查询归档，每次归档仅写入一个 SQLite 事务。`GET /api/runs` 列出历史，`GET /api/export/{id}` 签发证据。
+五个预览接口均为 `GET /api/samples/{dirty|clean}/{stage}`，各工序按需计算；`stage` 值见深度登记（含 `exceedance` 超限事件扫描）。自有数据通过 `POST /api/runs` 的 `files` 对象提交字符串 `window`、`minutes`、`modes`、`reports`，也可提交 `{"sample":"dirty"}`。`GET /api/runs/{id}/{stage}` 查询归档，每次归档仅写入一个 SQLite 事务（运行包与处置单同事务）。`GET /api/runs/{id}/handoffs` 列出该烟道窗口的当前处置单与结论轨迹，`GET /api/runs` 列出历史，`GET /api/export/{id}` 签发证据。
 
 - [数据定义与计算边界](docs/DATA-DICTIONARY.md)
 - [模块与陷阱验证](docs/DEPTH.md)

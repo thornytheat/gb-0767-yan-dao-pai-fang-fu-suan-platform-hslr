@@ -1,6 +1,7 @@
 from functools import cached_property
 
 from app.monitor.counts import minute_counts
+from app.monitor.exceedance import scan_events
 from app.monitor.hours import aggregate
 from app.monitor.modes import mode_windows
 from app.monitor.oxygen import correct
@@ -10,7 +11,7 @@ from app.monitor.source import intake
 from app.monitor.validity import minute_evidence
 from app.numbers import display
 
-STAGES = ('intake', 'oxygen', 'validity', 'hours', 'reports')
+STAGES = ('intake', 'oxygen', 'validity', 'hours', 'exceedance', 'reports')
 
 
 class Inspection:
@@ -53,6 +54,14 @@ class Inspection:
         rows = aggregate(self.validity['rows'], self.window)
         return {'rows': rows, 'totals': {key: sum(row[key] for row in rows) for key in
                                         ('scheduled', 'valid', 'exempt', 'missing', 'late')}}
+
+    @cached_property
+    def exceedance(self):
+        events = scan_events(self.validity['rows'], self.window)
+        counts = {'PENDING': 0, 'CONFIRMED': 0, 'REVOKED': 0, 'WITHDRAWN': 0}
+        for event in events:
+            counts[event['status']] += 1
+        return {'limit_mg_nm3': str(self.window.limit), 'events': events, 'counts': counts}
 
     @cached_property
     def reports(self):

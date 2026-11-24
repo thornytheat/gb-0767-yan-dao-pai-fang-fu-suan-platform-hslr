@@ -16,4 +16,5 @@ def archive_run(store, payload):
     results = audit.results()
     packet = {'manifest': manifest(run_id, hashes, vars(audit.window), name, started),
               'originals': files, 'results': results}
-    return store.commit(run_id, packet)
+    # 运行包与超限处置单在同一个 SQLite 事务内提交，失败整体回滚。
+    return store.commit_run(run_id, packet)
